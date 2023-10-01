@@ -7,7 +7,9 @@ The librdkafka library is a C library, and the confluent-kafka client is a pytho
 HOW TO RUN:
 
 1. Install confluent-kafka client for python
-```pip install confluent-kafka```
+```
+pip install confluent-kafka
+```
 
 2. Set the required environment variables. We take these 3 inputs from environment variables for our program.
 ```
@@ -16,10 +18,14 @@ INSIGHTS_TOPIC: The topic to produce insights to
 LOG_LEVEL: The log level for the program
 ```
 3. Run the program
-```python3 consumer.py```
+```
+python3 consumer.py
+```
 
 4. Pass optional command line arguments
-```python3 consumer.py --num_consumers 2 --consumer_conf "consumer_conf.json"```
+```
+python3 consumer.py --num_consumers 2 --consumer_conf "consumer_conf.json"
+```
 
 
 DESIGN:
