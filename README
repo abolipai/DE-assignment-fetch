@@ -9,6 +9,7 @@ HOW TO RUN:
 1. Install confluent-kafka client for python
 ```
 pip install confluent-kafka
+
 ```
 
 2. Set the required environment variables. We take these 3 inputs from environment variables for our program.
@@ -20,11 +21,13 @@ LOG_LEVEL: The log level for the program
 3. Run the program
 ```
 python3 consumer.py
+
 ```
 
 4. Pass optional command line arguments
 ```
 python3 consumer.py --num_consumers 2 --consumer_conf "consumer_conf.json"
+
 ```
 
 
