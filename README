@@ -1,0 +1,71 @@
+This project uses the librdkafka client for python (confluent-kafka) to produce and consume messages from a kafka cluster.
+It consumes messages from the 'user-login' (or any specified) topic and generates some insights, and produces them to the 'insights_topic' (or any specified topic).
+
+Language Choice: Python
+The librdkafka library is a C library, and the confluent-kafka client is a python wrapper for it. This C library supports low latency and high throughput and thus is a good choice for this project.
+
+HOW TO RUN:
+
+1. Install confluent-kafka client for python
+```pip install confluent-kafka```
+
+2. Set the required environment variables. We take these 3 inputs from environment variables for our program.
+```
+KAFKA_TOPIC: The topic to consume messages from
+INSIGHTS_TOPIC: The topic to produce insights to
+LOG_LEVEL: The log level for the program
+```
+3. Run the program
+```python3 consumer.py```
+
+4. Pass optional command line arguments
+```python3 consumer.py --num_consumers 2 --consumer_conf "consumer_conf.json"```
+
+
+DESIGN:
+1. The program assumes that the data comes in form of JSON strings. It parses the JSON string and extracts the required fields.
+2. It uses the confluent-kafka client to consume messages from the specified topic. 
+3. We start the consumer based on the configurations based. If auto commit is disabled in the configurations, we commit the offsets manually after processing the message. If the field is missing, we assume auto commit is enabled.
+4. We create an admin client to create the insights topic if it doesn't exist. This is a failsafe as the topic is usually created by the producer if it doesn't exist.
+5. We extract some insights from the data as explained below and produce them to the insights topic.
+6. To produce the insights, we create a basic producer with the broker and create a JSON string as message.
+7. All along the code flow, we log any required information for debugging and error purposes. This log level can be set with the LOG_LEVEL environment variable.
+8. We constantly check for KafkaException, Message errors wherever needed and handle them appropriately. We also handle KeyboardInterrupt to gracefully exit the program.
+
+INSIGHTS:
+1. To provide insights, we do a basic data analysis. We check the device type of the user and keep a track of the total number of devices of a particular type encountered according to the timestamp.
+2. If the device type field does not exist, we assume it to be 'unknown'.
+
+SCALABILITY:
+1. We can specify the number of consumers to be run and all of them will consume messages from the same topic. This will increase the throughput of the program.
+2. However this would only work when we have multiple partitions of the topic. Every consumer from the same group ID will consume from a different partition. If we have only one partition, then only one consumer will consume from the topic.
+3. We can also run multiple instances of the program with different consumer group IDs on different topics to increase the throughput.
+4. This design scales well for a single kafka cluster with multiple topics. If we have multiple kafka clusters, we can run multiple instances of the program with different bootstrap servers to consume from different clusters.
+
+FAULT TOLERANCE:
+1. We can set the auto commit to false in the configurations and commit the offsets manually after processing the message. This way, if the program crashes, we can start the program again and start consuming from the last committed offset.
+2. Since we allow to start multiple consumers, if any one of them crashes, the other consumers will regroup and some consumer would be assigned this partition to consume from.
+
+LIMITATIONS/DRAWBACKS:
+1. The consumer is very specific to the type of data we are given in this project. We can have a function that can create consumers that can be used for any type of data. (like JSONDeserializer, AVRODeserializer etc)
+2. We create only one topic for insights. This can be customized according the type of insights we need.
+3. Better error handling can be done. We can have a retry mechanism for failed messages, better error handling for producer/consumer failures. However, this would depend on the use case and the failure handling mechanisms we want to implement.
+4. Currently, we extract data information and produce the insights to the insight topic synchronously. We can run a separate thread and do this asynchronously.
+Also, we create the producer for every message we want to produce. We can create a producer once and use it to produce all the messages.
+
+ADDITIONAL QUESTIONS ON NEXT STEPS:
+1. How would you deploy this application in production?
+- We have created a docker image for this application. We can deploy this docker image on a container orchestration platform like Kubernetes. We can also use a container registry like DockerHub to store the image. We have also created added the consumer service to the docker-compose file.
+- This can be deployed in Docker containers on a Kubernetes cluster. We can have multiple instances of the program running on different nodes of the cluster. We can also have multiple instances of the program running on the same node. We can also have multiple instances of the program running on the same node with different consumer group IDs to increase the throughput.
+- We can also deploy this on a serverless platform like AWS Lambda. We can have multiple instances of the program running on different lambda functions.
+- We can also deploy it on a cloud platform like AWS EC2. The Kafka cluster (which can also be deployed on a cloud) should be accessible to this AWS node.
+
+2. What other components would you want to add to make this production ready?
+- We would want to remove the limitations mentioned above and make the consumer more generic.
+- We would want to support different message semantics and put checks for them (like exactly once, at least once etc). For critical insights, we would want to have a transactional producer and consumer.
+
+3. How can this application scale with a growing dataset?
+- For a growing dataset, as explained before, we can run multiple instances of the program with different consumer group IDs on different topics to increase the throughput.
+- We can run the producer which produces the insights data asynchronously to increase the speed.
+- We can also process and get insights from the data asynchronously. 
+- We can dynamically add/remove containers or nodes which are running this application according to the load on the system.

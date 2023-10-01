@@ -1,0 +1,5 @@
+{
+    "bootstrap.servers": "0.0.0.0:29092",
+    "group.id": "pipeline_consumer_group_1",
+    "auto.offset.reset": "earliest"
+}
